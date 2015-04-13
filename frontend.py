@@ -44,7 +44,7 @@ import zmq
 '''
   kazoo tutorial and reference: https://kazoo.readthedocs.org/en/latest/
 '''
-import kazoo.client
+import kazoo.exceptions
 '''
   bottle tutorial and reference: http://bottlepy.org/docs/dev/index.html
 '''
@@ -54,6 +54,7 @@ from bottle import route, run, request, response, abort, default_app
 import table
 import retrieve
 import gen_ports
+import kazooclientlast
 
 REQ_ID_FILE = "reqid.txt"
 
@@ -214,17 +215,18 @@ def main():
         sys.exit(1)
 
     # Open connection to ZooKeeper and context for zmq
-    with kzcl(kazoo.client.KazooClient(hosts=args.zkhost)) as kz, \
+    with kzcl(kazooclientlast.KazooClientLast(hosts=args.zkhost)) as kz, \
         zmqcm(zmq.Context.instance()) as zmq_context:
 
         # Set up publish and subscribe sockets
         setup_pub_sub(zmq_context, args.sub_to_name)
 
         # Initialize sequence numbering by ZooKeeper
-        if not kz.exists(SEQUENCE_OBJECT):
-            kz.create(SEQUENCE_OBJECT, "0")
-        else:
-            kz.set(SEQUENCE_OBJECT, "0")
+        try:
+            kz.create(path=SEQUENCE_OBJECT, value="0", makepath=True)
+        except kazoo.exceptions.NodeExistsError as nee:
+            kz.set(SEQUENCE_OBJECT, "0") # Another instance has already created the node
+                                         # or it is left over from prior runs
 
         # Wait for all DBs to be ready
         barrier_path = APP_DIR+BARRIER_NAME
@@ -266,10 +268,13 @@ def main():
 def retrieve_route():
     ''' Implement retrieve call '''
     global request_count
+    global seq_num
 
     id = int(request.query.id)
 
-    print ("instance {0} retrieving id {1}".format(args.name, id))
+    seq_num += 1
+
+    print ("instance {0} operation {1} retrieving id {2}".format(args.name, seq_num.last_set, id))
 
     result = retrieve.do_retrieve(table, args.name, id, request_count)
 
