@@ -2,9 +2,11 @@
 
 import boto.dynamodb2
 from boto.dynamodb2.table import Table
-from dbinstance import create, retrieve, add, delete
+from boto.dynamodb2.fields import HashKey
+from dbinstance import create, retrieve_id, retrieve_name, add, delete_id, delete_name
 
 # Test driver for dbinstance.py
+# NOTE: This runs dbinstance, so you'll need to Ctrl+C it before the test code runs.
 
 # [DEBUG] Create Table
 def debug_create_table():
@@ -32,11 +34,9 @@ def debug_populate_table():
 	return
 
 def debug_retrieve_users():
-	res = retrieve(input_id="12")
+	res = retrieve_id("12")
 	print res
-	res = retrieve(input_name="SolidSnake")
-	print res
-	res = retrieve(input_id="14", input_name="RevolverOcelot")
+	res = retrieve_name("SolidSnake")
 	print res
 	return
 
@@ -47,9 +47,9 @@ def debug_add_activities():
 	print res
 
 def debug_delete_users():
-	res = delete(input_id="12")
+	res = delete_id("12")
 	print res
-	res = delete(input_name="RevolverOcelot")
+	res = delete_name("RevolverOcelot")
 	print res
 
 # [DEBUG] Delete Table

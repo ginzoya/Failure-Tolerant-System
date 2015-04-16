@@ -5,9 +5,70 @@ import boto.dynamodb2
 from boto.dynamodb2.fields import HashKey, RangeKey, KeysOnlyIndex, GlobalAllIndex
 from boto.dynamodb2.table import Table
 from boto.dynamodb2.types import NUMBER
+from bottle import Bottle, run, route, request, response, template
 
 # Code for a database instance. Imported code from assignment 3 and aggregated it to this file for centralized usage
-# TODO: change how the parameters are obtained, since they're supposed to come from requests
+
+# TODO: change the instance name to the one specified in the startup script
+INSTANCE_NAME = "DB1"
+
+HOST = "localhost"
+PORT = 8080
+seq_num = 0 # local sequence number
+
+app = Bottle()
+
+@app.route('/create')
+def create_user():
+	# TODO: Add in zookeeper call to find out the current sequence number and compare it with the local seq_num
+	# to see if we can service this request as soon as it comes in
+
+	user_id = request.query.id
+	name = request.query.name
+	activities = request.query.activities
+
+	response_body = create(input_id=user_id, input_name=name, input_activities=activities)
+	response.status = response_body[0]
+
+	# TODO: Publish to the other instances
+
+	return response_body[1]
+
+@app.route('/retrieve')
+def retrieve_user():
+	user_id = request.query.id
+	name = request.query.name
+
+	if (user_id):
+		response.status, response_body = retrieve_id(user_id)
+	elif (name):
+		response.status, response_body = retrieve_name(name)
+
+	return response_body
+
+@app.route('/delete')
+def delete_user():
+	id = request.query.id
+	name = request.query.name
+
+	if (id):
+		results_tuple = delete_id(id)
+	elif (name):
+		results_tuple = delete_name(name)
+
+	response.status = results_tuple[0] # status code
+	response_body = results_tuple[1] # message
+	return response_body
+
+@app.route('/add_activities')
+def add_activities():
+	id = request.query.id
+	activity = request.query.activities
+	message_tuple = add(id, activity)
+	status=message_tuple[0] #first variable in tuple is status code
+	response_body=message_tuple[1] #second variable in tuple is the message
+	response.status=status #assign the status code
+	return response_body
 
 # Code from grayfox.py
 #Create a new user if not defined. Else: Return that user entry.
@@ -91,12 +152,6 @@ def create(input_id="", input_name="", input_activities=""):
 
 # Retrieval code from sniper_wolf.py
 # Since we no longer have an index on name, we must scan the table when given just the username.
-def retrieve(input_id="", input_name=""):
-	if (input_id):
-		results = retrieve_id(input_id)
-	else:
-		results = retrieve_name(input_name)
-	return results
 
 #Function for retrieval by ID
 def retrieve_id(user_id):
@@ -216,12 +271,6 @@ def add(idnum, activities):
 
 # Delete user code from revolver_ocelot.py
 # Also changed the query to a scan now that there's no index on name
-def delete(input_id="", input_name=""):
-	if (input_id != ""):
-		results = delete_id(input_id)
-	else:
-		results = delete_name(input_name)
-	return results
 
 def delete_id(idnum):
 	try:
@@ -296,3 +345,5 @@ def delete_name(username):
 	except Exception, e:
 		print e
 	return response_body
+
+run(app, host=HOST, port=PORT)
