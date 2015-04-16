@@ -15,6 +15,7 @@ import heapq
 # To be called when something happens in publish/subscribe
 def add_seq_num(heap, seqNum):
 	heapq.heappush(heap, seqNum)
+	heap.sort()
 
 # This function looks at the smallest number in heap, and checks if it is the next sequence number compared to the sequence number of the last operation that was performed. If so, it pops the sequence number off the heap and performs the associated operation, increasing the sequence number of the last performed operation by one
 def compare_seq_num(heap, currentSeqNum):
@@ -30,22 +31,21 @@ def compare_seq_num(heap, currentSeqNum):
 		return currentSeqNum 
 
 '''
-h = []
-add_seq_num(h, 5)
-add_seq_num(h, 3)
-add_seq_num(h, 2)
-add_seq_num(h, 1)
-currentNum = 0
-print h
-currentNum = compare_seq_num(h, currentNum)
-print currentNum, h
-currentNum = compare_seq_num(h, currentNum)
-print currentNum, h
-add_seq_num(h, 4)
-currentNum = compare_seq_num(h, currentNum)
-print currentNum, h
-currentNum = compare_seq_num(h, currentNum)
-print currentNum, h
-currentNum = compare_seq_num(h, currentNum)
-print currentNum, h
+Method to use Algorithm
+#On database initalize:
+	seq_hash = []
+	current_seq_num = 0
+
+#On incoming publish/subscribe:
+	#To do: Find method to get new_seq_num from publish/subscribe
+	new_seq_num = (Get from publish/subscribe)
+	add_seq_num(seq_hash, new_seq_num)
+
+#Checking to see if can run next operation
+	compared_num = compare_seq_num(seq_hash, current_seq_num)
+	if (compared_num > current_seq_num):
+		run operation
+		current_seq_num++
+	else:
+		Do nothing
 '''
