@@ -2,73 +2,27 @@
 
 import json
 import boto.dynamodb2
+import boto.sqs
+import time
 from boto.dynamodb2.fields import HashKey, RangeKey, KeysOnlyIndex, GlobalAllIndex
 from boto.dynamodb2.table import Table
 from boto.dynamodb2.types import NUMBER
-from bottle import Bottle, run, route, request, response, template
+from algorithm import compare_seq_num, add_seq_num
+from boto.sqs.message import Message
 
 # Code for a database instance. Imported code from assignment 3 and aggregated it to this file for centralized usage
 
 # TODO: change the instance name to the one specified in the startup script
 INSTANCE_NAME = "DB1"
 
+AWS_REGION = "us-west-2"
+IN_QUEUE = "SQS_IN"
+OUT_QUEUE = "SQS_OUT"
+
 HOST = "localhost"
 PORT = 8080
 seq_num = 0 # local sequence number
-
-app = Bottle()
-
-@app.route('/create')
-def create_user():
-	# TODO: Add in zookeeper call to find out the current sequence number and compare it with the local seq_num
-	# to see if we can service this request as soon as it comes in
-
-	user_id = request.query.id
-	name = request.query.name
-	activities = request.query.activities
-
-	response_body = create(input_id=user_id, input_name=name, input_activities=activities)
-	response.status = response_body[0]
-
-	# TODO: Publish to the other instances
-
-	return response_body[1]
-
-@app.route('/retrieve')
-def retrieve_user():
-	user_id = request.query.id
-	name = request.query.name
-
-	if (user_id):
-		response.status, response_body = retrieve_id(user_id)
-	elif (name):
-		response.status, response_body = retrieve_name(name)
-
-	return response_body
-
-@app.route('/delete')
-def delete_user():
-	id = request.query.id
-	name = request.query.name
-
-	if (id):
-		results_tuple = delete_id(id)
-	elif (name):
-		results_tuple = delete_name(name)
-
-	response.status = results_tuple[0] # status code
-	response_body = results_tuple[1] # message
-	return response_body
-
-@app.route('/add_activities')
-def add_activities():
-	id = request.query.id
-	activity = request.query.activities
-	message_tuple = add(id, activity)
-	status=message_tuple[0] #first variable in tuple is status code
-	response_body=message_tuple[1] #second variable in tuple is the message
-	response.status=status #assign the status code
-	return response_body
+POLL_INTERVAL = 30 # seconds
 
 # Code from grayfox.py
 #Create a new user if not defined. Else: Return that user entry.
@@ -79,7 +33,7 @@ def create(input_id="", input_name="", input_activities=""):
 	# (Attempt to) Connect to table
 	# If the table doesn't exist, feel free to un-comment the creation code at the bottom.
 	try:
-		users = Table('users', connection=boto.dynamodb2.connect_to_region('us-west-2'))
+		users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 
 	except Exception, c:
 		print c
@@ -156,7 +110,7 @@ def create(input_id="", input_name="", input_activities=""):
 #Function for retrieval by ID
 def retrieve_id(user_id):
 	#Grabs the table from dynamodb
-	users = Table('users', connection=boto.dynamodb2.connect_to_region('us-west-2'))
+	users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	#Attempt to grab the item from the table
 	try:
 		#Call for getting item from table
@@ -191,7 +145,7 @@ def retrieve_id(user_id):
 #Function for retrieval by username
 def retrieve_name(username):
 	#Get the table from dynamodb
-	users = Table('users', connection=boto.dynamodb2.connect_to_region('us-west-2'))
+	users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 
 	#Assuming a failure first, before assigning a success
 	result = 404, {
@@ -232,7 +186,7 @@ def retrieve_name(username):
 #is not found in the table
 def add(idnum, activities):
 	#get the table
-	users = Table('users', connection=boto.dynamodb2.connect_to_region('us-west-2'))
+	users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	#split the list by comma
 	activity_set = set(activities.split(","))
 	#convert set to list so we can dump into a json representation
@@ -274,7 +228,7 @@ def add(idnum, activities):
 
 def delete_id(idnum):
 	try:
-		users = Table('users', connection=boto.dynamodb2.connect_to_region('us-west-2'))
+		users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	except Exception, c:
 		print c
 
@@ -315,7 +269,7 @@ def delete_name(username):
 			}]
 		}
 	try:
-		users = Table('users', connection=boto.dynamodb2.connect_to_region('us-west-2'))
+		users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	except Exception, c:
 		print c
 
@@ -346,4 +300,51 @@ def delete_name(username):
 		print e
 	return response_body
 
-run(app, host=HOST, port=PORT)
+# Polling loop to grab messages off SQS
+def main_loop():
+	try:
+	    conn = boto.sqs.connect_to_region(AWS_REGION)
+	    if conn == None:
+	        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+	        sys.exit(1)
+
+	    # Assuming that the queues will have already been created elsewhere
+	    q_in = conn.get_queue(IN_QUEUE)
+	    q_out = conn.get_queue(OUT_QUEUE)
+
+	except Exception as e:
+	    sys.stderr.write("Exception connecting to SQS\n")
+	    sys.stderr.write(str(e))
+	    sys.exit(1)
+
+	print "Starting up instance: {0}".format(INSTANCE_NAME)
+
+	# Actual work gets done here
+	while (1 < 2): # lol
+		# grab a message off SQS_IN
+		rs = q_in.get_messages()
+		if (len(rs) < 1):
+			time.sleep(POLL_INTERVAL) # wait before checking for messages again (in seconds)
+			continue
+		m = rs[0]
+		q_in.delete_message(m) # remove message from queue so it's not read multiple times
+		operation = m.get_body()
+		print "Received message: " + operation
+		# TODO: ZK calls here
+
+		# TODO: check algorithm to see if we can run the operation.
+		# We're gonna need a shared heap between all instances here.
+
+		# compare_seq_num(heap, seq_num)
+
+		# TODO: actually perform the operation on the db
+
+		# put a response on the output queue
+		message_out = Message()
+		# TODO: replace this with an actual response
+		message_out.set_body("the thing worked")
+		print "Sending message: " + message_out.get_body()
+		q_out.write(message_out)
+	return
+
+main_loop()
