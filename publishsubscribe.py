@@ -13,11 +13,28 @@ from frontend import get_ports
 	According to the diagram, I would gather it from the DBInstance, so I need
 	to wait for Aaron to implement it? Discuss later.
 '''
-def get_seq_and_operation:
-	portTuple = get_ports() #tuple with publisher port and list of subscriber ports
-	#need to get the sequence number and operation, store it in tuple
-	#seqNumber = dbInstnace.getSeqNumber()
-	#operation = dbInstance.getOperation()
-	#return seqNumber, operation
-	
 
+def send_message(pubPort, message):    
+    print "Instance: " + instance + " publishing: " + message
+    pubPort.send_string(message)
+    return {
+        "data": {
+            "type": "Message sent"
+            }
+        }
+def receive_message(subPorts):
+    if len(subPorts) == 0:
+        response.status = 404
+        return {
+            "errors": [{
+                "no subscriptions": {
+                    "msg": "This instance is not subscribed to any publishers"
+                    }
+                }]
+            }
+    #TODO: finish
+	
+listOfPorts = gen_ports() #get ports, first is publish, rest is list of subscriber
+send_message(listOfPorts[0], message)
+receive_message(listOfPorts[1:])
+	
