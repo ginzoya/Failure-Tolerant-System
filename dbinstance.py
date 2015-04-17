@@ -19,9 +19,9 @@ POLL_INTERVAL = 30 # seconds
 # Polling loop to grab messages off SQS
 def running_loop():
 	try:
-	    conn = boto.sqs.connect_to_region(AWS_REGION)
+	    conn = boto.sqs.connect_to_region("us-west-2")
 	    if conn == None:
-	        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+	        sys.stderr.write("Could not connect to AWS region '{0}'\n".format("us-west-2"))
 	        sys.exit(1)
 
 	    # Assuming that the queues will have already been created elsewhere
