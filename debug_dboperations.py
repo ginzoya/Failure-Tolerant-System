@@ -3,10 +3,9 @@
 import boto.dynamodb2
 from boto.dynamodb2.table import Table
 from boto.dynamodb2.fields import HashKey
-from dbinstance import create, retrieve_id, retrieve_name, add, delete_id, delete_name
+from dboperations import create, retrieve_id, retrieve_name, add, delete_id, delete_name
 
-# Test driver for dbinstance.py
-# NOTE: This runs dbinstance, so you'll need to Ctrl+C it before the test code runs.
+# Test driver for dboperations.py
 
 # [DEBUG] Create Table
 def debug_create_table():
