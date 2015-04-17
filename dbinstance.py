@@ -8,6 +8,26 @@ import boto.sqs
 import time
 import argparse
 
+import zmq
+import kazoo.exceptions
+import gen_ports
+import kazooclientlast
+
+# Instance Naming
+BASE_INSTANCE_NAME = "DB"
+
+# Names for ZooKeeper hierarchy
+APP_DIR = "/" + BASE_INSTANCE_NAME
+PUB_PORT = "/Pub"
+SUB_PORTS = "/Sub"
+SEQUENCE_OBJECT = APP_DIR + "/SeqNum"
+DEFAULT_NAME = BASE_INSTANCE_NAME + "1"
+BARRIER_NAME = "/Ready"
+
+# Publish and subscribe constants
+SUB_TO_NAME = 'localhost' # By default, we subscribe to our own publications
+BASE_PORT = 7777
+
 from dboperations import create, retrieve_id, retrieve_name, add, delete_id, delete_name
 from boto.dynamodb2.table import Table
 from algorithm import compare_seq_num, add_seq_num
@@ -62,6 +82,7 @@ def running_loop():
 		print "Sending message: " + message_out.get_body()
 		q_out.write(message_out)
 	return
+
 #TODO: If anyone has any ideas for defaults/better descriptions go for it
 def build_parser():
     ''' Define parser for command-line arguments '''
@@ -76,6 +97,88 @@ def build_parser():
     parser.add_argument("proxy_list", help="List of instances to proxy, if any (comma-separated)")
     parser.add_argument("base_port", type=int, help="Base port for publish/subscribe")
     return parser
+
+def get_ports():
+    ''' Return the publish port and the list of subscribe ports '''
+	if args.db_names != '':
+		db_names = args.db_names.split(',')
+	else:
+		db_names = []
+	has_proxies = False
+	if args.proxy_list != '':
+		proxies = args.proxy_list.split(',')
+		has_proxies = True
+	else:
+		proxies = []
+	return gen_ports.gen_ports(args.base_port, db_names, proxies, args.my_name, has_proxies)
+
+def setup_pub_sub(zmq_context, sub_to_name):
+	''' Set up the publish and subscribe connections '''
+	global pub_socket
+	global sub_sockets
+
+	pub_port, sub_ports = get_ports()
+
+	'''
+		Open a publish socket. Use a 'bind' call.
+	'''
+	pub_socket = zmq_context.socket(zmq.PUB)
+	'''
+		The bind call does not take a DNS name, just a port.
+	'''
+	print "instance {0} binding on {1}".format(args.my_name, pub_port)
+	pub_socket.bind("tcp://*:{0}".format(pub_port))
+
+	sub_sockets = []
+	for sub_port in sub_ports:
+		'''
+			Open a subscribe socket. Use a 'connect' call.
+		'''
+		sub_socket = zmq_context.socket(zmq.SUB)
+		'''
+			You always have to specify a SUBSCRIBE option, even
+			in the case (such as this) where you are subscribing to
+			every possible message (indicated by "").
+		'''
+		sub_socket.setsockopt(zmq.SUBSCRIBE, "")
+		'''
+			The connect call requires the DNS name of the system being
+			subscribed to.
+		'''
+		# TODO what the heck is sub_to_name
+		print "instance {0} connecting to {1} on {2}".format(args.my_name, sub_to_name, sub_port)
+		sub_socket.connect("tcp://{0}:{1}".format(sub_to_name, sub_port))
+		sub_sockets.append(sub_socket)
+
+@contextlib.contextmanager
+def zmqcm(zmq_context):
+	'''
+		This function wraps a context manager around the zmq context,
+		allowing the client to be used in a 'with' statement. Simply
+		use the function without change.
+	'''
+	try:
+		yield zmq_context
+	finally:
+		print "Closing sockets"
+		# The "0" argument destroys all pending messages
+		# immediately without waiting for them to be delivered
+		zmq_context.destroy(0)
+
+@contextlib.contextmanager
+def kzcl(kz):
+	'''
+		This function wraps a context manager around the kazoo client,
+		allowing the client to be used in a 'with' statement.  Simply use
+		the function without change.
+	'''
+	kz.start()
+	try:
+		yield kz
+	finally:
+		print "Closing ZooKeeper connection"
+		kz.stop()
+		kz.close()
     
 def create_table():
 	users = Table.create(args.my_name, 
@@ -96,10 +199,54 @@ def main():
 	Initializes an instance of a dynamoDB.
 '''
 	global args
+	global seq_num
+
 	parser = build_parser() #build parser
 	args = parser.parse_args()
 	create_table()
-	running_loop()
+
+	# Open connection to ZooKeeper and context for zmq
+	with kzcl(kazooclientlast.KazooClientLast(hosts=args.zk_string)) as kz, \
+		zmqcm(zmq.Context.instance()) as zmq_context:
+
+		# Set up publish and subscribe sockets
+		# TODO sub_to_name is in args, but isn't a required parameter in runsystem.sh
+		setup_pub_sub(zmq_context, args.sub_to_name)
+
+		# Initialize sequence numbering by ZooKeeper
+		try:
+			kz.create(path=SEQUENCE_OBJECT, value="0", makepath=True)
+		except kazoo.exceptions.NodeExistsError as nee:
+			kz.set(SEQUENCE_OBJECT, "0") # Another instance has already created the node
+										 # or it is left over from prior runs
+
+		# Wait for all DBs to be ready
+		barrier_path = APP_DIR+BARRIER_NAME
+		kz.ensure_path(barrier_path)
+		b = kz.create(barrier_path + '/' + args.my_name, ephemeral=True)
+
+		if args.db_names != '':
+			db_names = args.db_names.split(',')
+			num_dbs = len(db_names)
+		else:
+			db_names = []
+			num_dbs = len(db_names)
+
+		while len(kz.get_children(barrier_path)) < num_dbs:
+			time.sleep(1)
+		print "Past rendezvous"
+
+		# Now the instances can start responding to requests
+
+		'''
+			Create the sequence counter.
+			This creates client-side links to a common structure
+			on the server side, so it has to be done *after* the
+			rendezvous.
+		''' 
+		seq_num = kz.Counter(SEQUENCE_OBJECT)
+		
+		running_loop()
 
 if __name__ == "__main__":
     main()
