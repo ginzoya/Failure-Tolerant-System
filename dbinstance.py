@@ -6,6 +6,7 @@ import json
 import boto.dynamodb2
 import boto.sqs
 import time
+import argparse
 
 from dboperations import create, retrieve_id, retrieve_name, add, delete_id, delete_name
 from boto.dynamodb2.table import Table
@@ -23,7 +24,7 @@ seq_num = 0 # local sequence number
 POLL_INTERVAL = 30 # seconds
 
 # Polling loop to grab messages off SQS
-def main_loop():
+def running_loop():
 	try:
 	    conn = boto.sqs.connect_to_region(AWS_REGION)
 	    if conn == None:
@@ -68,5 +69,47 @@ def main_loop():
 		print "Sending message: " + message_out.get_body()
 		q_out.write(message_out)
 	return
+#TODO: If anyone has any ideas for defaults/better descriptions go for it
+def build_parser():
+    ''' Define parser for command-line arguments '''
+    parser = argparse.ArgumentParser(description="Web server demonstrating final project technologies")
+    parser.add_argument("zk_string", help="ZooKeeper host string (name:port or IP:port, with port defaulting to 2181)")
+    parser.add_argument("in_queue", help="Name of input queue")
+    parser.add_argument("out_queue", help="Name of output queue")
+    parser.add_argument("write_capacity", type=int, help="write capacity for this instance")
+    parser.add_argument("read_capacity", type=int, help="read capacity for this instance")
+    parser.add_argument("my_name", help="name of this particular instance")
+    parser.add_argument("db_names", help="list of instance names for the databases (comma-separated)")
+    parser.add_argument("proxy_list", help="List of instances to proxy, if any (comma-separated)")
+    parser.add_argument("base_port", type=int, help="Base port for publish/subscribe")
+    return parser
+    
+def create_table():
+	users = Table.create('users', 
+		schema=[
+	    	HashKey('id'),
+	    ], 
+	    throughput={
+		    'read': args.read_capacity,
+		    'write': args.write_capacity,
+		},
+		connection=boto.dynamodb2.connect_to_region('us-west-2')
+		)
+	print "Table created!"
+	return
 
-main_loop()
+def main():
+'''
+	Initializes an instance of a dynamoDB.
+'''
+	global args
+	parser = build_parser() #build parser
+	#update variables
+	INSTANCE_NAME = args.my_name
+	N_QUEUE = args.in_queue
+	OUT_QUEUE = args.out_queue
+	create_table()
+	running_loop()
+
+if __name__ == "__main__":
+    main()
