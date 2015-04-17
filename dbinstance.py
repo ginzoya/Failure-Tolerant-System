@@ -97,6 +97,7 @@ def main():
 '''
 	global args
 	parser = build_parser() #build parser
+	args = parser.parse_args()
 	create_table()
 	running_loop()
 
