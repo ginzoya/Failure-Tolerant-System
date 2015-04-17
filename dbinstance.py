@@ -13,34 +13,27 @@ from boto.dynamodb2.table import Table
 from algorithm import compare_seq_num, add_seq_num
 from boto.sqs.message import Message
 
-# TODO: change the instance name to the one specified in the startup script
-INSTANCE_NAME = "DB1"
-
-AWS_REGION = "us-west-2"
-IN_QUEUE = "SQS_IN"
-OUT_QUEUE = "SQS_OUT"
-
 seq_num = 0 # local sequence number
 POLL_INTERVAL = 30 # seconds
 
 # Polling loop to grab messages off SQS
 def running_loop():
 	try:
-	    conn = boto.sqs.connect_to_region(AWS_REGION)
+	    conn = boto.sqs.connect_to_region("us-west-2")
 	    if conn == None:
-	        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+	        sys.stderr.write("Could not connect to AWS region '{0}'\n".format("us-west-2"))
 	        sys.exit(1)
 
 	    # Assuming that the queues will have already been created elsewhere
-	    q_in = conn.get_queue(IN_QUEUE)
-	    q_out = conn.get_queue(OUT_QUEUE)
+	    q_in = conn.get_queue(args.in_queue)
+	    q_out = conn.get_queue(args.out_queue)
 
 	except Exception as e:
 	    sys.stderr.write("Exception connecting to SQS\n")
 	    sys.stderr.write(str(e))
 	    sys.exit(1)
 
-	print "Starting up instance: {0}".format(INSTANCE_NAME)
+	print "Starting up instance: {0}".format(args.my_name)
 
 	# Actual work gets done here
 	while (1 < 2): # lol
@@ -85,7 +78,7 @@ def build_parser():
     return parser
     
 def create_table():
-	users = Table.create('users', 
+	users = Table.create(args.my_name, 
 		schema=[
 	    	HashKey('id'),
 	    ], 
@@ -104,10 +97,6 @@ def main():
 '''
 	global args
 	parser = build_parser() #build parser
-	#update variables
-	INSTANCE_NAME = args.my_name
-	N_QUEUE = args.in_queue
-	OUT_QUEUE = args.out_queue
 	create_table()
 	running_loop()
 
