@@ -59,14 +59,13 @@ def running_loop():
 	# Actual work gets done here
 	while (1 < 2): # lol
 		# grab a message off SQS_IN
-		rs = q_in.get_messages()
+		rs = q_in.get_messages(message_attributes=["action", "id", "name", "activities"])
 		if (len(rs) < 1):
 			time.sleep(POLL_INTERVAL) # wait before checking for messages again (in seconds)
 			continue
 		m = rs[0]
 		q_in.delete_message(m) # remove message from queue so it's not read multiple times
-		operation = m.get_body()
-		print "Received message: " + operation
+		print "Received message: " + m.get_body()
 		# TODO: ZK calls here
 
 		# TODO: check algorithm to see if we can run the operation.
@@ -74,13 +73,74 @@ def running_loop():
 
 		# compare_seq_num(heap, seq_num)
 
-		# TODO: actually perform the operation on the db
-
-		# put a response on the output queue
+		# Actually perform the operation on the db here, grab the response,
+		# and put a message on the output queue
+		action = m.message_attributes["action"]["string_value"]
 		message_out = Message()
-		# TODO: replace this with an actual response
-		message_out.set_body("the thing worked")
-		print "Sending message: " + message_out.get_body()
+		print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
+
+		if (action == "create"):
+			user_id = m.message_attributes["id"]["string_value"]
+			user_name = m.message_attributes["name"]["string_value"]
+			user_activities = m.message_attributes["activities"]["string_value"]
+
+			response = create(user_id, user_name, user_activities)
+			# Grab the entire json body and put in the message for SQS
+			message_out.set_body(response[1])
+			# Set the response code of the request as a message attribute
+			message_out.message_attributes = {
+				"response_code": {
+					"data_type": "Number",
+					"string_value": response[0]
+				}
+			}
+		elif (action == "retrieve"):
+			user_id = m.message_attributes["id"]["string_value"]
+			user_name = m.message_attributes["name"]["string_value"]
+
+			if (user_id != ""):
+				response = retrieve_id(user_id)
+			else:
+				response = retrieve_name(user_name)
+			message_out.set_body(response[1])
+			message_out.message_attributes = {
+				"response_code": {
+					"data_type": "Number",
+					"string_value": response[0]
+				}
+			}
+		elif (action == "delete"):
+			user_id = m.message_attributes["id"]["string_value"]
+			user_name = m.message_attributes["name"]["string_value"]
+
+			if (user_id != ""):
+				response = delete_id(user_id)
+			else:
+				response = delete_name(user_name)
+
+			message_out.set_body(response[1])
+			message_out.message_attributes = {
+				"response_code": {
+					"data_type": "Number",
+					"string_value": response[0]
+				}
+			}
+		elif (action == "add_activities"):
+			user_id = m.message_attributes["id"]["string_value"]
+			user_activities = m.message_attributes["activities"]["string_value"]
+
+			response = add(user_id, user_activities)
+
+			message_out.set_body(response[1])
+			message_out.message_attributes = {
+				"response_code": {
+					"data_type": "Number",
+					"string_value": response[0]
+				}
+			}
+
+		# Send out the message to the output queue
+		print "Sending message: " + message_out.get_body() # [debug]
 		q_out.write(message_out)
 	return
 
