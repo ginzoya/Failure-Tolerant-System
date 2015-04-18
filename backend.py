@@ -5,18 +5,9 @@ from boto.sqs.message import Message
 from bottle import route, run, request, response, default_app
 
 AWS_REGION = "us-west-2"
-# TODO: replace this with the queue name specified in the command line arguments
-OUT_QUEUE = "SQS_OUT"
 PORT = 8081
 
-try:
-    conn = boto.sqs.connect_to_region(AWS_REGION)
-    if conn == None:
-        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
-        sys.exit(1)
 
-    # Assume the queue is ready
-    q_out = conn.get_queue(OUT_QUEUE)
 
 except Exception as e:
     sys.stderr.write("Exception connecting to SQS\n")
@@ -52,10 +43,28 @@ def app():
 	    }
 	    #print resp # [debug]
 	    return resp
+'''
+	Build the parsed arguments, made a function incase we want to add more
+'''
+def build_parser():
+	parser.add_argument("out_queue", help="name of sqs output queue")
+    return parser
+    
+def main():
+	global args
+	parser = build_parser()
+	args = parser.parse_args()
+	
+	try:
+    conn = boto.sqs.connect_to_region(AWS_REGION)
+    if conn == None:
+        sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+        sys.exit(1)
 
-app = default_app()
-run(app, host="localhost", port=PORT)
-
+    # Assume the queue is ready
+    q_out = conn.get_queue(args.out_queue)
+	app = default_app()
+	run(app, host="localhost", port=PORT)
 # An example message would look like this:
 # {
 # 	"action": 
@@ -79,3 +88,6 @@ run(app, host="localhost", port=PORT)
 # 		"string_value": "{eating,swimming}" 
 # 	}
 # }
+
+if __name__ == "__main__":
+    main()

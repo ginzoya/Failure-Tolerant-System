@@ -18,14 +18,29 @@ from boto.sqs.message import Message
 
 #Globals
 AWS_REGION = "us-west-2"
-IN_QUEUE = "SQS_IN"
 
-app = Bottle()
 
-#Connect to (or create) the IN_QUEUE
-conn = boto.sqs.connect_to_region(AWS_REGION)
-in_queue = conn.create_queue(IN_QUEUE)
 
+'''
+	Build the parsed arguments, made a function incase we want to add more
+'''
+def build_parser():
+	parser.add_argument("in_queue", help="name of sqs input queue")
+    return parser
+    
+
+def main():
+	global args
+	parser = build_parser()
+	args = parser.parse_args()
+	
+	app = Bottle()
+
+	#Connect to (or create) the IN_QUEUE
+	conn = boto.sqs.connect_to_region(AWS_REGION)
+	in_queue = conn.create_queue(args.in_queue)
+	run(app, host='localhost', port=8080)
+	
 ### BEGIN @ROUTE DEFINITIONS ###
 
 @app.route('/create')
@@ -177,4 +192,7 @@ def add_activities():
 	return add_activities_message.message_attributes
 
  ### END OF @ROUTE DEFINITIONS ###
-run(app, host='localhost', port=8080)
+
+
+if __name__ == "__main__":
+    main()
