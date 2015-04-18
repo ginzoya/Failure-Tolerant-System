@@ -35,6 +35,7 @@ from dboperations import create, retrieve_id, retrieve_name, add, delete_id, del
 from boto.dynamodb2.table import Table
 from algorithm import compare_seq_num, add_seq_num
 from boto.sqs.message import Message
+from counterlast import CounterLast
 
 seq_num = 0 # local sequence number
 POLL_INTERVAL = 30 # seconds
@@ -72,10 +73,12 @@ def running_loop():
 		q_in.delete_message(m) # remove message from queue so it's not read multiple times
 		print "Received message: " + m.get_body()
 		# TODO: ZK calls here
+		seq_num +=1 #increment
+		loc_seq_num = seq_num.last_set() #store value to local variable
 
 		# TODO: Finish the calls from other modules
 		# calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
-		# NOTE: that seq_num here means the seq_num of the operation the DB grabbed
+		# NOTE: seq_num here means the seq_num of the operation the DB grabbed
 		# while (calculated_num < seq_num): 
 		#	if next_in_seq:
 		#		TODO: find operation of calculated_num
