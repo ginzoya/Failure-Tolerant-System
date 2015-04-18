@@ -45,7 +45,6 @@ def main():
 	if conn == None:
 		sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
 		sys.exit(1)
-	conn = boto.sqs.connect_to_region(AWS_REGION)
 	in_queue = conn.create_queue(args.in_queue)
 	run(app, host='localhost', port=8080)
 	
