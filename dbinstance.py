@@ -14,6 +14,8 @@ import kazoo.exceptions
 import gen_ports
 import kazooclientlast
 
+import algorithm
+
 # Instance Naming
 BASE_INSTANCE_NAME = "DB"
 
@@ -54,6 +56,9 @@ def running_loop():
 	    sys.stderr.write(str(e))
 	    sys.exit(1)
 
+	seq_hash = []
+	last_performed_num = seq_num
+
 	print "Starting up instance: {0}".format(args.my_name)
 
 	# Actual work gets done here
@@ -68,10 +73,22 @@ def running_loop():
 		print "Received message: " + m.get_body()
 		# TODO: ZK calls here
 
-		# TODO: check algorithm to see if we can run the operation.
-		# We're gonna need a shared heap between all instances here.
+		# TODO: Finish the calls from other modules
+		# calculated_num = algorithm.compare_seq_num(seq_hash, last_performed_num)
+		# TODO: Note that seq_num here means the seq_num of the operation the DB grabbed
+		# while (calculated_num < seq_num): 
+		#	if (calculated_num == last_performed_num+1):
+		#		TODO: find operation of calculated_num
+		#			Do operation of calculated_num
+		# 		last_performed_num = calculated_num
+		#	TODO: run check subscribe socket code
+		# 		new_seq_num = (fresh from publish/subscribe)
+		# 		algorithm.add_seq_num(seq_hash, new_seq_num)
+		# 	calculated_num = algorithm.compare_seq_num(seq_hash, last_performed_num)
 
-		# compare_seq_num(heap, seq_num)
+		# TODO: after it finally exits this loop, the seq_num should be equal to calculated_num
+		# This means that calculated_num == seq_num, so it is the current operation
+		# Then last_performed_num += 1
 
 		# Actually perform the operation on the db here, grab the response,
 		# and put a message on the output queue
