@@ -38,36 +38,33 @@ def main():
 	
 	run(app, host="localhost", port=PORT)
 
-
 @app.route('/')
 def app():
     # grab a message off SQS_IN
-	rs = q_out.get_messages(message_attributes=["action", "id", "name", "activities"])
+	rs = q_out.get_messages(message_attributes=["response_code"])
 	if (len(rs) < 1):
 		print "No messages on the queue!"
-		response.status = 404 # Not found
-		return "Queue empty\n"
+		response.status = 204 # No content
+		response_body = "Queue empty\n"
+		# TODO: for some reason this doesn't return "Queue empty" in the user's browser.
+		# That needs to be fixed. Otherwise, this seems to be working fine
+		return response_body
+
 	m = rs[0]
 	q_out.delete_message(m) # remove message from queue so it's not read multiple times
 
 	if m == None:
 	    response.status = 204 # "No content"
-	    return 'Queue empty\n'
+	    response_body = "Queue empty\n"
+	    return response_body
 	else:
-	    action = m.message_attributes["action"]["string_value"]
-	    user_id = m.message_attributes["id"]["string_value"]
-	    user_name = m.message_attributes["name"]["string_value"]
-	    user_activities = m.message_attributes["activities"]["string_value"]
+	    response_code = m.message_attributes["response_code"]["string_value"]
 
-	    # TODO: we might want to send the sequence number with the rest of this info
-	    resp = {
-	    	'action': action,
-	    	'id': user_id,
-	    	'name': user_name,
-	    	'activites': user_activities
-	    }
-	    #print resp # [debug]
-	    return resp
+	    response_body = m.get_body()
+	    response.status = int(response_code)
+
+	    #print response_body # [debug]
+	    return response_body
 
 # An example message would look like this:
 # {

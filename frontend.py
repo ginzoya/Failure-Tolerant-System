@@ -93,8 +93,8 @@ def retrieve_user():
 
 	retrieve_message = Message()
 
-	if (user_id):
-		retrieve_body = 'Retrieving user with id: %s' % user_id
+	if (user_id or name):
+		retrieve_body = 'Retrieving user with id: {0} or name:{1}'.format(user_id, name)
 		retrieve_message.message_attributes = {
 			"action": {
 				"data_type": "String",
@@ -103,20 +103,11 @@ def retrieve_user():
 			"id": {
 				"data_type": "String",
 				"string_value": user_id
-			}
-		}
-
-	elif (name):
-		retrieve_body = 'Retrieving user with name: %s' % name
-		retrieve_message.message_attributes = {
-			"action": {
-				"data_type": "String",
-				"string_value": "retrieve"
 			},
-			"name": {
-				"data_type": "String",
-				"string_value": name
-			}
+      "name": {
+        "data_type": "String",
+        "string_value": name
+      }
 		}
 
 	else:
@@ -136,8 +127,8 @@ def delete_user():
 
 	delete_message = Message()
 
-	if (user_id):
-		delete_body = 'Deleting user with id: %s' % user_id
+	if (user_id or name):
+		delete_body = 'Deleting user with id: {0} or name: {1}'.format(user_id, name)
 		delete_message.message_attributes = {
 			"action": {
 				"data_type": "String",
@@ -146,20 +137,11 @@ def delete_user():
 			"id": {
 				"data_type": "String",
 				"string_value": user_id
-			}
-		}
-
-	elif (name):
-		delete_body = 'Deleting user with name: %s' % name
-		delete_message.message_attributes = {
-			"action": {
-				"data_type": "String",
-				"string_value": "delete"
 			},
-			"name": {
-				"data_type": "String",
-				"string_value": name
-			}
+      "name" : {
+        "data_type": "String",
+        "string_value": name
+      }
 		}
 
 	else:
