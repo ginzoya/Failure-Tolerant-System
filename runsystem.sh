@@ -43,9 +43,11 @@ fi
 # python backend.py $Out_queue
 
 # Starts the DBs
+IFS=$","
 for DB_name in $DB_names; do
 	# python dbinstance.py $ZK_string $In_queue $Out_queue $Write_capacity $Read_capacity $DB_name $DB_names $DB_proxy $Base_port
 	echo $DB_name
 done
+unset IFS
 
 exit 0
