@@ -7,6 +7,7 @@ import boto.dynamodb2
 import boto.sqs
 import time
 import argparse
+import contextlib
 
 import zmq
 import kazoo.exceptions
@@ -99,7 +100,7 @@ def build_parser():
     return parser
 
 def get_ports():
-    ''' Return the publish port and the list of subscribe ports '''
+	''' Return the publish port and the list of subscribe ports '''
 	if args.db_names != '':
 		db_names = args.db_names.split(',')
 	else:
@@ -145,7 +146,6 @@ def setup_pub_sub(zmq_context, sub_to_name):
 			The connect call requires the DNS name of the system being
 			subscribed to.
 		'''
-		# TODO what the heck is sub_to_name
 		print "instance {0} connecting to {1} on {2}".format(args.my_name, sub_to_name, sub_port)
 		sub_socket.connect("tcp://{0}:{1}".format(sub_to_name, sub_port))
 		sub_sockets.append(sub_socket)
@@ -195,9 +195,9 @@ def create_table():
 	return
 
 def main():
-'''
-	Initializes an instance of a dynamoDB.
-'''
+	'''
+		Initializes an instance of a dynamoDB.
+	'''
 	global args
 	global seq_num
 
@@ -210,8 +210,7 @@ def main():
 		zmqcm(zmq.Context.instance()) as zmq_context:
 
 		# Set up publish and subscribe sockets
-		# TODO sub_to_name is in args, but isn't a required parameter in runsystem.sh
-		setup_pub_sub(zmq_context, args.sub_to_name)
+		setup_pub_sub(zmq_context, SUB_TO_NAME)
 
 		# Initialize sequence numbering by ZooKeeper
 		try:
