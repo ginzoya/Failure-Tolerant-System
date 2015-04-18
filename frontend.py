@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # This code sets up a web server on 'localhost:8080'.
 # The paths defined for the web server will send messages
@@ -13,18 +13,41 @@
 # message attributes for the meaningful data.
 
 import boto.sqs
+import argparse
 from bottle import Bottle, run, route, request, response, template
 from boto.sqs.message import Message
 
 #Globals
 AWS_REGION = "us-west-2"
-IN_QUEUE = "SQS_IN"
-
 app = Bottle()
 
-#Connect to (or create) the IN_QUEUE
-conn = boto.sqs.connect_to_region(AWS_REGION)
-in_queue = conn.create_queue(IN_QUEUE)
+
+'''
+	Build the parsed arguments, made a function incase we want to add more
+'''
+def build_parser():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("in_queue", help="name of sqs input queue")
+	return parser
+    
+def main():
+	global args
+	parser = build_parser()
+	print parser.parse_args()
+	args = parser.parse_args()
+	#Connect to (or create) the IN_QUEUE
+	try:
+		conn = boto.sqs.connect_to_region(AWS_REGION)
+	except Exception as e:
+		sys.stderr.write("Exception connecting to SQS\n")
+		sys.stderr.write(str(e))
+		sys.exit(1)
+	if conn == None:
+		sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
+		sys.exit(1)
+	in_queue = conn.create_queue(args.in_queue)
+	run(app, host='localhost', port=8080)
+	
 
 ### BEGIN @ROUTE DEFINITIONS ###
 
@@ -177,4 +200,7 @@ def add_activities():
 	return add_activities_message.message_attributes
 
  ### END OF @ROUTE DEFINITIONS ###
-run(app, host='localhost', port=8080)
+
+
+if __name__ == "__main__":
+    main()
