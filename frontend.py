@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # This code sets up a web server on 'localhost:8080'.
 # The paths defined for the web server will send messages
@@ -13,34 +13,34 @@
 # message attributes for the meaningful data.
 
 import boto.sqs
+import argparse
 from bottle import Bottle, run, route, request, response, template
 from boto.sqs.message import Message
 
 #Globals
 AWS_REGION = "us-west-2"
-
+app = Bottle()
 
 
 '''
 	Build the parsed arguments, made a function incase we want to add more
 '''
 def build_parser():
+	parser = argparse.ArgumentParser()
 	parser.add_argument("in_queue", help="name of sqs input queue")
-    return parser
+	return parser
     
-
 def main():
 	global args
 	parser = build_parser()
+	print parser.parse_args()
 	args = parser.parse_args()
-	
-	app = Bottle()
-
 	#Connect to (or create) the IN_QUEUE
 	conn = boto.sqs.connect_to_region(AWS_REGION)
 	in_queue = conn.create_queue(args.in_queue)
 	run(app, host='localhost', port=8080)
 	
+
 ### BEGIN @ROUTE DEFINITIONS ###
 
 @app.route('/create')
