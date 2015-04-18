@@ -20,17 +20,17 @@ def add_seq_num(heap, seqNum):
 # This function looks at the smallest number in heap, and checks if it is the next sequence number compared to the sequence number of the last operation that was performed. If so, it pops the sequence number off the heap and performs the associated operation, increasing the sequence number of the last performed operation by one
 def compare_seq_num(heap, lastSeqNum):
 	if (len(heap) < 1):
-		return lastSeqNum
+		return lastSeqNum, False
 	elif (lastSeqNum + 1) == heap[0]: #If the next value is indeed the next sequence number
 		newSeqNum = heapq.heappop(heap) #Pop the value from the heap and make it the current
 		heap.sort()
-		return newSeqNum
+		return newSeqNum, True
 	elif lastSeqNum == heap[0]: #Else if it is a duplicate
 		heapq.heappop(heap) #Just remove it from the heap
 		heap.sort()
-		return lastSeqNum
+		return lastSeqNum, False
 	else: #Wait until the next sequence number is there
-		return lastSeqNum
+		return lastSeqNum, False
 
 '''
 Method to use Algorithm

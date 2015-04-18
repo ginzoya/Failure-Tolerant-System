@@ -74,20 +74,21 @@ def running_loop():
 		# TODO: ZK calls here
 
 		# TODO: Finish the calls from other modules
-		# calculated_num = algorithm.compare_seq_num(seq_hash, last_performed_num)
-		# TODO: Note that seq_num here means the seq_num of the operation the DB grabbed
+		# calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
+		# NOTE: that seq_num here means the seq_num of the operation the DB grabbed
 		# while (calculated_num < seq_num): 
-		#	if (calculated_num == last_performed_num+1):
+		#	if next_in_seq:
 		#		TODO: find operation of calculated_num
 		#			Do operation of calculated_num
 		# 		last_performed_num = calculated_num
 		#	TODO: run check subscribe socket code
 		# 		new_seq_num = (fresh from publish/subscribe)
 		# 		algorithm.add_seq_num(seq_hash, new_seq_num)
-		# 	calculated_num = algorithm.compare_seq_num(seq_hash, last_performed_num)
+		# 	calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
 
-		# TODO: after it finally exits this loop, the seq_num should be equal to calculated_num
+		# NOTE: after it finally exits this loop, the seq_num should be equal to calculated_num
 		# This means that calculated_num == seq_num, so it is the current operation
+		# If not, then something has gone wrong with the algorithm (Needs to be debugged)
 		# Then last_performed_num += 1
 
 		# Actually perform the operation on the db here, grab the response,
