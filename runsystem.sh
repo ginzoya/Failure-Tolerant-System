@@ -42,10 +42,10 @@ if [ "$1" == "-h" ]; then
 fi
 
 # Starts frontend
-#python frontend.py $In_queue &
+python frontend.py $In_queue &
 
 # Starts backend
-#python backend.py $Out_queue &
+python backend.py $Out_queue &
 
 DB_list=""
 IFS=$","

@@ -16,6 +16,7 @@ import gen_ports
 import kazooclientlast
 
 import algorithm
+import publishsubscribe
 
 # Instance Naming
 BASE_INSTANCE_NAME = "DB"
@@ -60,7 +61,8 @@ def running_loop():
 	    sys.exit(1)
 
 	seq_hash = []
-	last_performed_num = seq_num
+	last_performed_num = 0
+	stored_messages = []
 
 	print "Starting up instance: {0}".format(args.my_name)
 
@@ -74,31 +76,39 @@ def running_loop():
 		m = rs[0]
 		q_in.delete_message(m) # remove message from queue so it's not read multiple times
 		print "Received message: " + m.get_body()
-		# TODO: ZK calls here
+
 		seq_num +=1 #increment
 		loc_seq_num = seq_num.last_set() #store value to local variable
 
-		# TODO: Finish the calls from other modules
-		# calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
-		# NOTE: seq_num here means the seq_num of the operation the DB grabbed
-		# while (calculated_num < seq_num): 
-		#	if next_in_seq:
-		#		TODO: find operation of calculated_num
-		#			Do operation of calculated_num
-		# 		last_performed_num = calculated_num
-		#	TODO: run check subscribe socket code
-		# 		new_seq_num = (fresh from publish/subscribe)
-		# 		algorithm.add_seq_num(seq_hash, new_seq_num)
-		# 	calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
+		publishsubscribe.send_message(pub_socket, [loc_seq_num, m]) 
+		# Publish to pub_socket the seq_num and the message
+
+		# Runs the algorithm to check if the next number in hash is one above the last performed seq num
+		calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
+		# This is the catch-up loop, running until the number after last performed seq num is loc_seq_num
+		while (calculated_num < loc_seq_num): 
+			if next_in_seq: # If the next number is indeed last_performed_num + 1
+				for ops in stored_messages: # Loops through the list of messages
+					if ops[0] == calculated_num: # Finds the right operation
+						perform_operation(ops[1]) # Performs the operation
+		 				last_performed_num = calculated_num #Increases the last operation done
+						# TODO: Remove it from this list
+			new_op, has_msg = publishsubscribe.receive_message(sub_sockets)
+			# This assumes that the return is in the format [seq_num, message]
+			if has_msg: # If there was an incoming message from the subscribe ports
+				algorithm.add_seq_num(seq_hash, new_op[0]) # Adds the seq_num to the hash
+				stored_messages.append(new_op) # Stores the message in the list
+				# Compares the next smallest number in the hash
+				calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
 
 		# NOTE: after it finally exits this loop, the seq_num should be equal to calculated_num
-		# This means that calculated_num == seq_num, so it is the current operation
+		# This means that calculated_num == loc_seq_num, so it is the current operation
 		# If not, then something has gone wrong with the algorithm (Needs to be debugged)
-		# Then last_performed_num += 1
 
 		# Actually perform the operation on the db here, grab the response,
 		# and put a message on the output queue
 		message_out = perform_operation(m)
+		last_performed_num += 1
 
 		# Send out the message to the output queue
 		print "Sending message: " + message_out.get_body() # [debug]
