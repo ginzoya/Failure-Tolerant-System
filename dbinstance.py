@@ -272,18 +272,22 @@ def kzcl(kz):
 		kz.close()
     
 def create_table():
-	users = Table.create(args.my_name, 
-		schema=[
-	    	HashKey('id'),
-	    ], 
-	    throughput={
-		    'read': args.read_capacity,
-		    'write': args.write_capacity,
-		},
-		connection=boto.dynamodb2.connect_to_region('us-west-2')
-		)
-	print "Table created!"
-	return
+	try:
+		users = Table.create(args.my_name, 
+			schema=[
+				HashKey('id'),
+			], 
+			throughput={
+				'read': args.read_capacity,
+				'write': args.write_capacity,
+			},
+			connection=boto.dynamodb2.connect_to_region('us-west-2')
+			)
+		print "Table created!"
+	except:
+		print "already exists!"
+	finally:
+		return
 
 def main():
 	'''
