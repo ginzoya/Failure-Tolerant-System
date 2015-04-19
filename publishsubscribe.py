@@ -22,11 +22,11 @@ def receive_message(sub_sockets):
 		return "No Subscriptions", False
 
 	else:
-		for (index in len(sub_sockets)):
-			num_events = sub_sockets[index].poll(timeout=5)
+		for sub_socket in sub_sockets:
+			num_events = sub_socket.poll(timeout=5)
 			if (num_events > 0):
 				try:
-					message_content = sub_sockets[index].recv_json(zmq.NOBLOCK)
+					message_content = sub_socket.recv_json(zmq.NOBLOCK)
 					# TODO: Format of message. Thinking that it should be:
 						# [Seq_num, Message]
 					return message_content, True
