@@ -98,74 +98,79 @@ def running_loop():
 
 		# Actually perform the operation on the db here, grab the response,
 		# and put a message on the output queue
-		action = m.message_attributes["action"]["string_value"]
-		message_out = Message()
-		print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
-
-		if (action == "create"):
-			user_id = m.message_attributes["id"]["string_value"]
-			user_name = m.message_attributes["name"]["string_value"]
-			user_activities = m.message_attributes["activities"]["string_value"]
-
-			response = create(user_id, user_name, user_activities)
-			# Grab the entire json body and put in the message for SQS
-			message_out.set_body(response[1])
-			# Set the response code of the request as a message attribute
-			message_out.message_attributes = {
-				"response_code": {
-					"data_type": "Number",
-					"string_value": response[0]
-				}
-			}
-		elif (action == "retrieve"):
-			user_id = m.message_attributes["id"]["string_value"]
-			user_name = m.message_attributes["name"]["string_value"]
-
-			if (user_id != ""):
-				response = retrieve_id(user_id)
-			else:
-				response = retrieve_name(user_name)
-			message_out.set_body(response[1])
-			message_out.message_attributes = {
-				"response_code": {
-					"data_type": "Number",
-					"string_value": response[0]
-				}
-			}
-		elif (action == "delete"):
-			user_id = m.message_attributes["id"]["string_value"]
-			user_name = m.message_attributes["name"]["string_value"]
-
-			if (user_id != ""):
-				response = delete_id(user_id)
-			else:
-				response = delete_name(user_name)
-
-			message_out.set_body(response[1])
-			message_out.message_attributes = {
-				"response_code": {
-					"data_type": "Number",
-					"string_value": response[0]
-				}
-			}
-		elif (action == "add_activities"):
-			user_id = m.message_attributes["id"]["string_value"]
-			user_activities = m.message_attributes["activities"]["string_value"]
-
-			response = add(user_id, user_activities)
-
-			message_out.set_body(response[1])
-			message_out.message_attributes = {
-				"response_code": {
-					"data_type": "Number",
-					"string_value": response[0]
-				}
-			}
+		message_out = perform_operation(m)
 
 		# Send out the message to the output queue
 		print "Sending message: " + message_out.get_body() # [debug]
 		q_out.write(message_out)
-	return
+
+# Performs action on the database based on in_msg
+# Returns the message to go to SQS_OUT
+def perform_operation(in_msg):
+	print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
+	action = in_msg.message_attributes["action"]["string_value"]
+	message_out = Message()
+
+	if (action == "create"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_name = in_msg.message_attributes["name"]["string_value"]
+		user_activities = in_msg.message_attributes["activities"]["string_value"]
+
+		response = create(user_id, user_name, user_activities)
+		# Grab the entire json body and put in the message for SQS
+		message_out.set_body(response[1])
+		# Set the response code of the request as a message attribute
+		message_out.message_attributes = {
+			"response_code": {
+				"data_type": "Number",
+				"string_value": response[0]
+			}
+		}
+	elif (action == "retrieve"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_name = in_msg.message_attributes["name"]["string_value"]
+
+		if (user_id != ""):
+			response = retrieve_id(user_id)
+		else:
+			response = retrieve_name(user_name)
+		message_out.set_body(response[1])
+		message_out.message_attributes = {
+			"response_code": {
+				"data_type": "Number",
+				"string_value": response[0]
+			}
+		}
+	elif (action == "delete"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_name = in_msg.message_attributes["name"]["string_value"]
+
+		if (user_id != ""):
+			response = delete_id(user_id)
+		else:
+			response = delete_name(user_name)
+
+		message_out.set_body(response[1])
+		message_out.message_attributes = {
+			"response_code": {
+				"data_type": "Number",
+				"string_value": response[0]
+			}
+		}
+	elif (action == "add_activities"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_activities = in_msg.message_attributes["activities"]["string_value"]
+
+		response = add(user_id, user_activities)
+
+		message_out.set_body(response[1])
+		message_out.message_attributes = {
+			"response_code": {
+				"data_type": "Number",
+				"string_value": response[0]
+			}
+		}
+	return message_out
 
 #TODO: If anyone has any ideas for defaults/better descriptions go for it
 def build_parser():
