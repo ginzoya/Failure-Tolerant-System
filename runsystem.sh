@@ -56,7 +56,7 @@ unset IFS
 
 # Starts the DBs
 for DB_name in $DB_list; do
-	python dbinstance.py $ZK_string $In_queue $Out_queue $Write_capacity $Read_capacity $DB_name $DB_names $DB_proxy $Base_port && fg
+	python dbinstance.py $ZK_string $In_queue $Out_queue $Write_capacity $Read_capacity $DB_name $DB_names $DB_proxy $Base_port &
 	#echo $DB_name
 done
 
