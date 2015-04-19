@@ -37,6 +37,7 @@ from boto.dynamodb2.table import Table
 from algorithm import compare_seq_num, add_seq_num
 from boto.sqs.message import Message
 from counterlast import CounterLast
+from boto.dynamodb2.fields import HashKey
 
 seq_num = 0 # local sequence number
 POLL_INTERVAL = 30 # seconds
