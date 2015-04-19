@@ -8,6 +8,7 @@ import boto.sqs
 import time
 import argparse
 import contextlib
+import sys
 
 import zmq
 import kazoo.exceptions

@@ -14,6 +14,7 @@
 
 import boto.sqs
 import argparse
+import sys
 from bottle import Bottle, run, route, request, response, template
 from boto.sqs.message import Message
 
@@ -45,6 +46,7 @@ def main():
 	if conn == None:
 		sys.stderr.write("Could not connect to AWS region '{0}'\n".format(AWS_REGION))
 		sys.exit(1)
+	global in_queue
 	in_queue = conn.create_queue(args.in_queue)
 	run(app, host='localhost', port=8080)
 	
