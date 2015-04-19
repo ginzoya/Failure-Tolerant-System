@@ -14,7 +14,7 @@ import zmq
 
 def send_message(pub_socket, message):    
 	print "Instance: " + instance + " publishing: " + message
-	pub_socket.send_string(message)
+	pub_socket.send_json(message)
 
 def receive_message(sub_sockets):
 	if len(sub_sockets) == 0:
@@ -26,7 +26,7 @@ def receive_message(sub_sockets):
 			num_events = sub_sockets[index].poll(timeout=5)
 			if (num_events > 0):
 				try:
-					message_content = sub_sockets[index].recv(zmq.NOBLOCK)
+					message_content = sub_sockets[index].recv_json(zmq.NOBLOCK)
 					# TODO: Format of message. Thinking that it should be:
 						# [Seq_num, Message]
 					return message_content, True
