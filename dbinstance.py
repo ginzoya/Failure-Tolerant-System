@@ -60,6 +60,8 @@ def running_loop():
 	    sys.stderr.write(str(e))
 	    sys.exit(1)
 
+	global seq_num
+
 	seq_hash = []
 	last_performed_num = 0
 	stored_messages = []
@@ -77,8 +79,8 @@ def running_loop():
 		q_in.delete_message(m) # remove message from queue so it's not read multiple times
 		print "Received message: " + m.get_body()
 
-		seq_num +=1 #increment
-		loc_seq_num = seq_num.last_set() #store value to local variable
+		seq_num += 1 #increment
+		loc_seq_num = seq_num.last_set #store value to local variable
 
 		publishsubscribe.send_message(pub_socket, [loc_seq_num, m]) 
 		# Publish to pub_socket the seq_num and the message
