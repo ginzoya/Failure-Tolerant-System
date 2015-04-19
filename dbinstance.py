@@ -90,9 +90,12 @@ def running_loop():
 			if next_in_seq: # If the next number is indeed last_performed_num + 1
 				for ops in stored_messages: # Loops through the list of messages
 					if ops[0] == calculated_num: # Finds the right operation
-						perform_operation(ops[1]) # Performs the operation
-		 				last_performed_num = calculated_num #Increases the last operation done
-						# TODO: Remove it from this list
+						op_holder = ops # Holdes the operation
+						op_found = True # Bool to say found operation
+				if op_found:
+					perform_operation(op_holder[1]) # Performs the operation
+		 			last_performed_num = calculated_num #Increases the last operation done
+					stored_messages.remove(op_holder) #Removes the operation from the list
 			new_op, has_msg = publishsubscribe.receive_message(sub_sockets)
 			# This assumes that the return is in the format [seq_num, message]
 			if has_msg: # If there was an incoming message from the subscribe ports
