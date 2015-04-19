@@ -293,7 +293,7 @@ def main():
 		args.proxy_list = ""
 	print args.proxy_list
 
-	#create_table()
+	create_table()
 
 	# Open connection to ZooKeeper and context for zmq
 	with kzcl(kazooclientlast.KazooClientLast(hosts=args.zk_string)) as kz, \
