@@ -59,18 +59,9 @@ def app():
 	    return response_body
 	else:
 	    response_code = m.message_attributes["response_code"]["string_value"]
-<<<<<<< HEAD
 
 	    response_body = m.get_body()
 	    response.status = int(response_code)
-=======
-
-	    response_body = m.get_body()
-	    response.status = int(response_code)
-
-	    #print response_body # [debug]
-	    return response_body
->>>>>>> 276fd4d4a6f184c039ebeae9c8b11f560e70edd8
 
 	    #print response_body # [debug]
 	    return response_body
