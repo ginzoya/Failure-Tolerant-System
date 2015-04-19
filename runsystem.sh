@@ -18,6 +18,11 @@ DB_names=$6
 DB_proxy=$7
 Base_port=$8
 
+if [ "$#" != "8" ]; then
+	DB_proxy='NONE'
+	Base_port=$7
+fi
+
 # Pass ZK_string to DBs
 # Pass in_queue to Frontend, DBs
 # Pass out_queue to Backend, DBs
@@ -37,17 +42,22 @@ if [ "$1" == "-h" ]; then
 fi
 
 # Starts frontend
-python frontend.py $In_queue &
+#python frontend.py $In_queue &
 
 # Starts backend
-python backend.py $Out_queue &
+#python backend.py $Out_queue &
 
-# Starts the DBs
+DB_list=""
 IFS=$","
-for DB_name in $DB_names; do
-	python dbinstance.py $ZK_string $In_queue $Out_queue $Write_capacity $Read_capacity $DB_name $DB_names $DB_proxy $Base_port && fg
-	echo $DB_name
+for name in $DB_names; do
+	DB_list="$DB_list $name"
 done
 unset IFS
+
+# Starts the DBs
+for DB_name in $DB_list; do
+	python dbinstance.py $ZK_string $In_queue $Out_queue $Write_capacity $Read_capacity $DB_name $DB_names $DB_proxy $Base_port && fg
+	#echo $DB_name
+done
 
 exit 0

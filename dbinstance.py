@@ -188,13 +188,16 @@ def get_ports():
 		db_names = args.db_names.split(',')
 	else:
 		db_names = []
-	has_proxies = False
+
+	#has_proxies = False
+
 	if args.proxy_list != '':
 		proxies = args.proxy_list.split(',')
-		has_proxies = True
+		#has_proxies = True
 	else:
 		proxies = []
-	return gen_ports.gen_ports(args.base_port, db_names, proxies, args.my_name, has_proxies)
+
+	return gen_ports.gen_ports(args.base_port, db_names, proxies, args.my_name)
 
 def setup_pub_sub(zmq_context, sub_to_name):
 	''' Set up the publish and subscribe connections '''
@@ -286,7 +289,11 @@ def main():
 
 	parser = build_parser() #build parser
 	args = parser.parse_args()
-	create_table()
+	if (args.proxy_list == "NONE"):
+		args.proxy_list = ""
+	print args.proxy_list
+
+	#create_table()
 
 	# Open connection to ZooKeeper and context for zmq
 	with kzcl(kazooclientlast.KazooClientLast(hosts=args.zk_string)) as kz, \
