@@ -28,7 +28,7 @@ fi
 # Pass out_queue to Backend, DBs
 # Pass Write/Read Capacity to DBs
 
-if [ "$1" == "-h" ]; then
+if [ "$1" == "-h" ] || [ "$1" == "-help" ]; then
 	printf "This script initalizes frontend, backend, and the 3 databases. The following params are required:\n
 1.A string identifying the ZooKeeper host and its port number, to be passed directly to the constructor for KazooClient. You should not try to interpret this string, but simply pass it directly to the constructor.
 2.The name of the SQS-in queue. A string of characters and hyphens with no whitespace or other punctuation.\n
@@ -37,7 +37,7 @@ if [ "$1" == "-h" ]; then
 5.The provisioned read capacity for the DynamoDB table created by each database instance. Integer, reads/s.\n
 6.A list of instance names for your database instances.\n
 7.A list of names of database instances that will be proxied for publish/subscribe.\n
-8.A base port address."
+8.A base port address.\n"
 	exit 0
 fi
 

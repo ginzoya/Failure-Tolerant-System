@@ -119,7 +119,6 @@ def running_loop():
 		last_performed_num += 1
 
 		# Send out the message to the output queue
-		print "Sending message: " + message_out.get_body() # [debug]
 		q_out.write(message_out)
 
 # Performs action on the database based on in_msg
@@ -134,7 +133,7 @@ def perform_operation_msg(in_msg):
 	message_out = Message()
 
 	if (action == "create"):
-		response = create(user_id, user_name, user_activities)
+		response = create(args.my_name, user_id, user_name, user_activities)
 		# Grab the entire json body and put in the message for SQS
 		message_out.set_body(response[1])
 		# Set the response code of the request as a message attribute
@@ -146,9 +145,9 @@ def perform_operation_msg(in_msg):
 		}
 	elif (action == "retrieve"):
 		if (user_id != ""):
-			response = retrieve_id(user_id)
+			response = retrieve_id(args.my_name, user_id)
 		else:
-			response = retrieve_name(user_name)
+			response = retrieve_name(args.my_name, user_name)
 		message_out.set_body(response[1])
 		message_out.message_attributes = {
 			"response_code": {
@@ -158,9 +157,9 @@ def perform_operation_msg(in_msg):
 		}
 	elif (action == "delete"):
 		if (user_id != ""):
-			response = delete_id(user_id)
+			response = delete_id(args.my_name, user_id)
 		else:
-			response = delete_name(user_name)
+			response = delete_name(args.my_name, user_name)
 
 		message_out.set_body(response[1])
 		message_out.message_attributes = {
@@ -170,7 +169,7 @@ def perform_operation_msg(in_msg):
 			}
 		}
 	elif (action == "add_activities"):
-		response = add(user_id, user_activities)
+		response = add(args.my_name, user_id, user_activities)
 
 		message_out.set_body(response[1])
 		message_out.message_attributes = {
@@ -188,25 +187,25 @@ def perform_operation(action, input_id="", input_name="", input_activities=""):
 	op_res = False
 
 	if (action == "create"):
-		response = create(input_id, input_name, input_activities)
+		response = create(args.my_name, input_id, input_name, input_activities)
 		if (response[0] == 201): # success
 			op_res = True
 	elif (action == "retrieve"):
 		if (input_id != ""):
-			response = retrieve_id(input_id)
+			response = retrieve_id(args.my_name, input_id)
 		else:
-			response = retrieve_name(input_name)
+			response = retrieve_name(args.my_name, input_name)
 		if (response[0] == 200): #success
 			op_res = True
 	elif (action == "delete"):
 		if (input_id != ""):
-			response = delete_id(input_id)
+			response = delete_id(args.my_name, input_id)
 		else:
-			response = delete_name(input_name)
+			response = delete_name(args.my_name, input_name)
 		if (response[0] == 200):
 			op_res = True
 	elif (action == "add_activities"):
-		response = add(input_id, input_activities)
+		response = add(args.my_name, input_id, input_activities)
 		if (response[0] == 200):
 			op_res = True
 	return op_res
