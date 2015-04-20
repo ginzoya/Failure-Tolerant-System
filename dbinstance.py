@@ -119,7 +119,6 @@ def running_loop():
 		last_performed_num += 1
 
 		# Send out the message to the output queue
-		print "message_out currently has type: " + str(type(message_out))
 		q_out.write(message_out)
 
 # Performs action on the database based on in_msg
