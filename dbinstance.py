@@ -129,7 +129,7 @@ def checkSubs(seq_hash, msg_list):
 	incoming_msg = publishsubscribe.receive_message(sub_sockets)
 	# This assumes that the return is in the format [seq_num, message]
 	if incoming_msg[1]: # If there was an incoming message from the subscribe ports
-		algorithm.add_seq_num(seq_hash, incoming_msg[0][1]) # Adds the seq_num to the hash
+		algorithm.add_seq_num(seq_hash, incoming_msg[0][0]) # Adds the seq_num to the hash
 		msg_list.append(incoming_msg[0]) # Stores the message in the list
 		# Compares the next smallest number in the hash
 
