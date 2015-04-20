@@ -73,6 +73,10 @@ def running_loop():
 		# grab a message off SQS_IN
 		rs = q_in.get_messages(message_attributes=["action", "id", "name", "activities"])
 		if (len(rs) < 1):
+			checkSubs(stored_messages) #Checks sub ports
+			calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
+			if next_in_seq: # If the next number is indeed last_performed_num + 1
+				last_performed_num = catchup(calculated_num, stored_messages, last_performed_num)
 			time.sleep(POLL_INTERVAL) # wait before checking for messages again (in seconds)
 			continue
 		m = rs[0]
@@ -91,23 +95,10 @@ def running_loop():
 		calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
 		# This is the catch-up loop, running until the number after last performed seq num is loc_seq_num
 		while (calculated_num < loc_seq_num): 
+			checkSubs(stored_messages) #Checks sub ports
 			if next_in_seq: # If the next number is indeed last_performed_num + 1
-				for ops in stored_messages: # Loops through the list of messages
-					if ops[0] == calculated_num: # Finds the right operation
-						op_holder = ops # Holds the operation
-						op_found = True # Bool to say found operation
-				if op_found:
-					operation = op_holder[1]
-					perform_operation(operation[0], operation[1], operation[2], operation[3]) # Performs the operation
-		 			last_performed_num = calculated_num #Increases the last operation done
-					stored_messages.remove(op_holder) #Removes the operation from the list
-			new_op, has_msg = publishsubscribe.receive_message(sub_sockets)
-			# This assumes that the return is in the format [seq_num, message]
-			if has_msg: # If there was an incoming message from the subscribe ports
-				algorithm.add_seq_num(seq_hash, new_op[0]) # Adds the seq_num to the hash
-				stored_messages.append(new_op) # Stores the message in the list
-				# Compares the next smallest number in the hash
-				calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
+				last_performed_num = catchup(calculated_num, stored_messages, last_performed_num)
+			calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
 
 		# NOTE: after it finally exits this loop, the seq_num should be equal to calculated_num
 		# This means that calculated_num == loc_seq_num, so it is the current operation
@@ -120,6 +111,27 @@ def running_loop():
 
 		# Send out the message to the output queue
 		q_out.write(message_out)
+
+def catchup(calc_num, stored_list, last_performed_num):
+	for ops in stored_list: # Loops through the list of messages
+		if ops[0] == calc_num: # Finds the right operation
+			op_holder = ops # Holds the operation
+			op_found = True # Bool to say found operation
+	if op_found:
+		operation = op_holder[1]
+		perform_operation(operation[0], operation[1], operation[2], operation[3]) # Performs the operation
+		stored_list.remove(op_holder) #Removes the operation from the list
+		return calc_num #Increases the last operation done
+	else:
+		return last_performed_num
+
+def checkSubs(msg_list):
+	incoming_msg = publishsubscribe.receive_message(sub_sockets)
+	# This assumes that the return is in the format [seq_num, message]
+	if incoming_msg[1]: # If there was an incoming message from the subscribe ports
+		algorithm.add_seq_num(seq_hash, new_op[0]) # Adds the seq_num to the hash
+		msg_list.append(new_op) # Stores the message in the list
+		# Compares the next smallest number in the hash
 
 # Performs action on the database based on in_msg
 # Returns the message to go to SQS_OUT
