@@ -18,18 +18,21 @@ def send_message(pub_socket, message):
 
 def receive_message(sub_sockets):
 	if len(sub_sockets) == 0:
-		return "No Subscriptions", False
-
+		noSubs = ["No Subscriptions", False]
+		return noSubs
 	else:
 		for sub_socket in sub_sockets:
 			num_events = sub_socket.poll(timeout=5)
 			if (num_events > 0):
 				try:
 					message_content = sub_socket.recv_json(zmq.NOBLOCK)
-					return message_content, True
-
+					success = [message_content, True]
+					return success
 				except zmq.ZMQError as zerr:
 					if zerr.errno == zmq.EAGAIN:
-						return "Empty Message", False
+						error = ["Empty Message", False]
+						return error
 						# Not an empty message, but worse
 						raise zerr
+	noMsg = ["No Messages", False]
+	return noMsg
