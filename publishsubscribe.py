@@ -13,12 +13,11 @@ import zmq
 '''
 
 def send_message(pub_socket, message):    
-	print "Instance: " + instance + " publishing: " + message
+	print message #DEBUG
 	pub_socket.send_json(message)
 
 def receive_message(sub_sockets):
 	if len(sub_sockets) == 0:
-		response.status = 404
 		return "No Subscriptions", False
 
 	else:
@@ -27,8 +26,6 @@ def receive_message(sub_sockets):
 			if (num_events > 0):
 				try:
 					message_content = sub_socket.recv_json(zmq.NOBLOCK)
-					# TODO: Format of message. Thinking that it should be:
-						# [Seq_num, Message]
 					return message_content, True
 
 				except zmq.ZMQError as zerr:
