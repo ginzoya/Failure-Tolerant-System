@@ -84,8 +84,28 @@ def create_user():
 	}
 
 	#Get this message into the queue
-	in_queue.write(create_message)
-	return create_message.message_attributes
+	try:
+		in_queue.write(create_message)
+
+		#The write did not fail, set response status
+		response.status = 202
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Accepted"
+			}
+		}
+	except boto.exception.SQSError as e:
+		print "Error while writing to queue."
+		print e
+		response.status = 400
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Bad Request"
+			}
+		}
+	
 
 @app.route('/retrieve')
 
@@ -113,13 +133,36 @@ def retrieve_user():
 		}
 
 	else:
-		return "Try again!"
+		print "No id or name specified."
+		response.status = 400
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Bad Request"
+			}
+		}
 
 	retrieve_message.set_body(retrieve_body)
-
-	#Get this message into the queue
-	in_queue.write(retrieve_message)
-	return retrieve_message.message_attributes
+	try:
+		#Get this message into the queue
+		in_queue.write(retrieve_message)
+		response.status = 202
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Accepted"
+			}
+		}
+	except boto.exception.SQSError as e:
+		print "Retrieval failed!"
+		print e
+		response.status = 400
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Bad Request"
+			}
+		}
 
 @app.route('/delete')
 
@@ -147,12 +190,35 @@ def delete_user():
 		}
 
 	else:
-		return "Try again!"
+		print "No id or name specified."
+		response.status = 400
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Bad Request"
+			}
+		}
 
 	delete_message.set_body(delete_body)
-
-	in_queue.write(delete_message)
-	return delete_message.message_attributes
+	try:
+		in_queue.write(delete_message)
+		response.status = 202
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Accepted"
+			}
+		}
+	except boto.exception.SQSError as e:
+		print "Delete failed!"
+		print e
+		response.status = 400
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Bad Request"
+			}
+		}
 
 @app.route('/add_activities')
 
@@ -178,10 +244,26 @@ def add_activities():
 			"string_value": activities
 		}
 	}
-
-	#Get this message into the queue
-	in_queue.write(add_activities_message)
-	return add_activities_message.message_attributes
+	try:
+		#Get this message into the queue
+		in_queue.write(add_activities_message)
+		response.status = 202
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Accepted"
+			}
+		}
+	except boto.exception.SQSError as e:
+		print "Write to activity list failed!"
+		print e
+		response.status = 400
+		return {
+			"data": {
+				"type": "Notification",
+				"msg": "Bad Request"
+			}
+		}
 
  ### END OF @ROUTE DEFINITIONS ###
 
