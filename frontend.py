@@ -93,6 +93,12 @@ def retrieve_user():
 	user_id = request.query.id
 	name = request.query.name
 
+	# default values of "-1", since empty strings can't be set as message attributes in SQS
+	if (user_id == ""):
+		user_id = "-1"
+	elif (name == ""):
+		name = "-1"
+
 	retrieve_message = Message()
 
 	if (user_id or name):
@@ -106,10 +112,10 @@ def retrieve_user():
 				"data_type": "String",
 				"string_value": user_id
 			},
-      "name": {
-        "data_type": "String",
-        "string_value": name
-      }
+			"name": {
+				"data_type": "String",
+				"string_value": name
+			}
 		}
 
 	else:
@@ -126,6 +132,12 @@ def retrieve_user():
 def delete_user():
 	user_id = request.query.id
 	name = request.query.name
+
+	# default values of "-1", since empty strings can't be set as message attributes in SQS
+	if (user_id == ""):
+		user_id = "-1"
+	elif (name == ""):
+		name = "-1"
 
 	delete_message = Message()
 
