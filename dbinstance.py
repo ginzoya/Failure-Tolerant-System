@@ -96,6 +96,8 @@ def running_loop():
 						op_found = True # Bool to say found operation
 				if op_found:
 					perform_operation(op_holder[1]) # Performs the operation
+					# TODO: fix the call above so it looks something like:
+					# perform_operation(action, input_id=id, input_name=name, input_activities=activities)
 		 			last_performed_num = calculated_num #Increases the last operation done
 					stored_messages.remove(op_holder) #Removes the operation from the list
 			new_op, has_msg = publishsubscribe.receive_message(sub_sockets)
@@ -112,7 +114,7 @@ def running_loop():
 
 		# Actually perform the operation on the db here, grab the response,
 		# and put a message on the output queue
-		message_out = perform_operation(m)
+		message_out = perform_operation_msg(m)
 		last_performed_num += 1
 
 		# Send out the message to the output queue
@@ -121,7 +123,7 @@ def running_loop():
 
 # Performs action on the database based on in_msg
 # Returns the message to go to SQS_OUT
-def perform_operation(in_msg):
+def perform_operation_msg(in_msg):
 	print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
 	action = in_msg.message_attributes["action"]["string_value"]
 	message_out = Message()
@@ -186,6 +188,36 @@ def perform_operation(in_msg):
 			}
 		}
 	return message_out
+
+# Performs the specified operation on the database, returning
+# True for success.
+def perform_operation(action, input_id="", input_name="", input_activities=""):
+	print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
+	op_res = False
+
+	if (action == "create"):
+		response = create(input_id, input_name, input_activities)
+		if (response[0] == 201): # success
+			op_res = True
+	elif (action == "retrieve"):
+		if (input_id != ""):
+			response = retrieve_id(input_id)
+		else:
+			response = retrieve_name(input_name)
+		if (response[0] == 200): #success
+			op_res = True
+	elif (action == "delete"):
+		if (input_id != ""):
+			response = delete_id(input_id)
+		else:
+			response = delete_name(input_name)
+		if (response[0] == 200):
+			op_res = True
+	elif (action == "add_activities"):
+		response = add(input_id, input_activities)
+		if (response[0] == 200):
+			op_res = True
+	return op_res
 
 #TODO: If anyone has any ideas for defaults/better descriptions go for it
 def build_parser():
