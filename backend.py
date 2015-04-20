@@ -44,9 +44,8 @@ def respond():
     # grab a message off SQS_IN
 	rs = q_out.get_messages(message_attributes=["response_code"])
 	if (len(rs) < 1):
-		print "No messages on the queue!"
 		response.status = 204 # No content
-		response_body = "Queue empty\n"
+		response_body = ""
 		# TODO: for some reason this doesn't return "Queue empty" in the user's browser.
 		# That needs to be fixed. Otherwise, this seems to be working fine
 		return response_body
