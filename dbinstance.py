@@ -135,7 +135,7 @@ def perform_operation_msg(in_msg):
 	if (action == "create"):
 		response = create(args.my_name, user_id, user_name, user_activities)
 		# Grab the entire json body and put in the message for SQS
-		message_out.set_body(response[1])
+		message_out.set_body(json.dumps(response[1]))
 		# Set the response code of the request as a message attribute
 		message_out.message_attributes = {
 			"response_code": {
@@ -148,7 +148,7 @@ def perform_operation_msg(in_msg):
 			response = retrieve_id(args.my_name, user_id)
 		else:
 			response = retrieve_name(args.my_name, user_name)
-		message_out.set_body(response[1])
+		message_out.set_body(json.dumps(response[1]))
 		message_out.message_attributes = {
 			"response_code": {
 				"data_type": "Number",
@@ -161,7 +161,7 @@ def perform_operation_msg(in_msg):
 		else:
 			response = delete_name(args.my_name, user_name)
 
-		message_out.set_body(response[1])
+		message_out.set_body(json.dumps(response[1]))
 		message_out.message_attributes = {
 			"response_code": {
 				"data_type": "Number",
@@ -171,13 +171,14 @@ def perform_operation_msg(in_msg):
 	elif (action == "add_activities"):
 		response = add(args.my_name, user_id, user_activities)
 
-		message_out.set_body(response[1])
+		message_out.set_body(json.dumps(response[1]))
 		message_out.message_attributes = {
 			"response_code": {
 				"data_type": "Number",
 				"string_value": response[0]
 			}
 		}
+
 	return message_out
 
 # Performs the specified operation on the database, returning
