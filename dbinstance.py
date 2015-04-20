@@ -95,7 +95,7 @@ def running_loop():
 		calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
 		# This is the catch-up loop, running until the number after last performed seq num is loc_seq_num
 		while (calculated_num < loc_seq_num): 
-			checkSubs(stored_messages) #Checks sub ports
+			checkSubs(seq_hash, stored_messages) #Checks sub ports
 			if next_in_seq: # If the next number is indeed last_performed_num + 1
 				last_performed_num = catchup(calculated_num, stored_messages, last_performed_num)
 			calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
