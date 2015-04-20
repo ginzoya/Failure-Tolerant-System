@@ -34,12 +34,13 @@ def main():
 		sys.exit(1)
 
     # Assume the queue is ready
+	global q_out
 	q_out = conn.create_queue(args.out_queue)
 	
 	run(app, host="localhost", port=PORT)
 
 @app.route('/')
-def app():
+def respond():
     # grab a message off SQS_IN
 	rs = q_out.get_messages(message_attributes=["response_code"])
 	if (len(rs) < 1):

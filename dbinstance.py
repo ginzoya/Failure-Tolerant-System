@@ -41,7 +41,7 @@ from counterlast import CounterLast
 from boto.dynamodb2.fields import HashKey
 
 seq_num = 0 # local sequence number
-POLL_INTERVAL = 30 # seconds
+POLL_INTERVAL = 5 # seconds
 
 # Polling loop to grab messages off SQS
 def running_loop():
