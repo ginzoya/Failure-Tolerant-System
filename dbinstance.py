@@ -82,7 +82,9 @@ def running_loop():
 		seq_num += 1 #increment
 		loc_seq_num = seq_num.last_set #store value to local variable
 
-		publishsubscribe.send_message(pub_socket, [loc_seq_num, m]) 
+		op_list = parse_sqs_msg(m)
+		publishsubscribe.send_message(pub_socket, [loc_seq_num, op_list]) 
+		algorithm.add_seq_num(seq_hash, loc_seq_num)
 		# Publish to pub_socket the seq_num and the message
 
 		# Runs the algorithm to check if the next number in hash is one above the last performed seq num
@@ -92,12 +94,11 @@ def running_loop():
 			if next_in_seq: # If the next number is indeed last_performed_num + 1
 				for ops in stored_messages: # Loops through the list of messages
 					if ops[0] == calculated_num: # Finds the right operation
-						op_holder = ops # Holdes the operation
+						op_holder = ops # Holds the operation
 						op_found = True # Bool to say found operation
 				if op_found:
-					perform_operation(op_holder[1]) # Performs the operation
-					# TODO: fix the call above so it looks something like:
-					# perform_operation(action, input_id=id, input_name=name, input_activities=activities)
+					operation = op_holder[1]
+					perform_operation(operation[0], operation[1], operation[2], operation[3]) # Performs the operation
 		 			last_performed_num = calculated_num #Increases the last operation done
 					stored_messages.remove(op_holder) #Removes the operation from the list
 			new_op, has_msg = publishsubscribe.receive_message(sub_sockets)
@@ -124,12 +125,12 @@ def running_loop():
 # Performs action on the database based on in_msg
 # Returns the message to go to SQS_OUT
 def perform_operation_msg(in_msg):
-	print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
 	parse_res = parse_sqs_msg(in_msg)
 	action = parse_res[0]
 	user_id = parse_res[1]
 	user_name = parse_res[2]
 	user_activities = parse_res[3]
+	print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
 	message_out = Message()
 
 	if (action == "create"):
@@ -232,7 +233,7 @@ def parse_sqs_msg(in_msg):
 	elif (action == "add_activities"):
 		user_id = in_msg.message_attributes["id"]["string_value"]
 		user_activities = in_msg.message_attributes["activities"]["string_value"]
-	return [action, user_id, user_name, user_activites]
+	return [action, user_id, user_name, user_activities]
 
 #TODO: If anyone has any ideas for defaults/better descriptions go for it
 def build_parser():
