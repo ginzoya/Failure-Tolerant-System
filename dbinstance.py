@@ -73,7 +73,7 @@ def running_loop():
 		# grab a message off SQS_IN
 		rs = q_in.get_messages(message_attributes=["action", "id", "name", "activities"])
 		if (len(rs) < 1):
-			checkSubs(stored_messages) #Checks sub ports
+			checkSubs(seq_hash, stored_messages) #Checks sub ports
 			calculated_num, next_in_seq = algorithm.compare_seq_num(seq_hash, last_performed_num)
 			if next_in_seq: # If the next number is indeed last_performed_num + 1
 				last_performed_num = catchup(calculated_num, stored_messages, last_performed_num)
@@ -125,12 +125,12 @@ def catchup(calc_num, stored_list, last_performed_num):
 	else:
 		return last_performed_num
 
-def checkSubs(msg_list):
+def checkSubs(seq_hash, msg_list):
 	incoming_msg = publishsubscribe.receive_message(sub_sockets)
 	# This assumes that the return is in the format [seq_num, message]
 	if incoming_msg[1]: # If there was an incoming message from the subscribe ports
-		algorithm.add_seq_num(seq_hash, new_op[0]) # Adds the seq_num to the hash
-		msg_list.append(new_op) # Stores the message in the list
+		algorithm.add_seq_num(seq_hash, incoming_msg[0][1]) # Adds the seq_num to the hash
+		msg_list.append(incoming_msg[0]) # Stores the message in the list
 		# Compares the next smallest number in the hash
 
 # Performs action on the database based on in_msg
