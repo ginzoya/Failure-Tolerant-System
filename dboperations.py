@@ -11,13 +11,13 @@ AWS_REGION = "us-west-2"
 # Code from grayfox.py
 #Create a new user if not defined. Else: Return that user entry.
 #Takes an id (str), name (str), and activities (str)
-def create(input_id="", input_name="", input_activities=""):
+def create(db_name, input_id="", input_name="", input_activities=""):
 	# [TODO] Error handling, alternative return status codes
 
 	# (Attempt to) Connect to table
 	# If the table doesn't exist, feel free to un-comment the creation code at the bottom.
 	try:
-		users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
+		users = Table(db_name, connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 
 	except Exception, c:
 		print c
@@ -92,9 +92,9 @@ def create(input_id="", input_name="", input_activities=""):
 # Since we no longer have an index on name, we must scan the table when given just the username.
 
 #Function for retrieval by ID
-def retrieve_id(user_id):
+def retrieve_id(db_name, user_id):
 	#Grabs the table from dynamodb
-	users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
+	users = Table(db_name, connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	#Attempt to grab the item from the table
 	try:
 		#Call for getting item from table
@@ -127,9 +127,9 @@ def retrieve_id(user_id):
 	return result
 
 #Function for retrieval by username
-def retrieve_name(username):
+def retrieve_name(db_name, username):
 	#Get the table from dynamodb
-	users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
+	users = Table(db_name, connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 
 	#Assuming a failure first, before assigning a success
 	result = 404, {
@@ -168,9 +168,9 @@ def retrieve_name(username):
 #takes in an id idnum and either a single or a list of activities (single only for 1.0)
 #and returns a message with status code 200 for success, and 404 if the id number
 #is not found in the table
-def add(idnum, activities):
+def add(db_name, idnum, activities):
 	#get the table
-	users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
+	users = Table(db_name, connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	#split the list by comma
 	activity_set = set(activities.split(","))
 	#convert set to list so we can dump into a json representation
@@ -210,9 +210,9 @@ def add(idnum, activities):
 # Delete user code from revolver_ocelot.py
 # Also changed the query to a scan now that there's no index on name
 
-def delete_id(idnum):
+def delete_id(db_name, idnum):
 	try:
-		users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
+		users = Table(db_name, connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	except Exception, c:
 		print c
 
@@ -243,7 +243,7 @@ def delete_id(idnum):
 		}
 	return response_body
 
-def delete_name(username):
+def delete_name(db_name, username):
 	# initialize response body to fail state
 	response_body = 404, {
 			"errors":[{
@@ -253,7 +253,7 @@ def delete_name(username):
 			}]
 		}
 	try:
-		users = Table('users', connection=boto.dynamodb2.connect_to_region(AWS_REGION))
+		users = Table(db_name, connection=boto.dynamodb2.connect_to_region(AWS_REGION))
 	except Exception, c:
 		print c
 
