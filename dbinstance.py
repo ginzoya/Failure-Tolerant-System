@@ -156,7 +156,7 @@ def perform_operation_msg(in_msg):
 			}
 		}
 	elif (action == "retrieve"):
-		if (user_id != ""):
+		if (user_id != "-1"): # "-1" is what we receive if the user didn't provide the id
 			response = retrieve_id(args.my_name, user_id)
 		else:
 			response = retrieve_name(args.my_name, user_name)
@@ -168,7 +168,7 @@ def perform_operation_msg(in_msg):
 			}
 		}
 	elif (action == "delete"):
-		if (user_id != ""):
+		if (user_id != "-1"): # "-1" is what we receive if the user didn't provide the id
 			response = delete_id(args.my_name, user_id)
 		else:
 			response = delete_name(args.my_name, user_name)
@@ -195,7 +195,7 @@ def perform_operation_msg(in_msg):
 
 # Performs the specified operation on the database, returning
 # True for success.
-def perform_operation(action, input_id="", input_name="", input_activities=""):
+def perform_operation(action, input_id="-1", input_name="-1", input_activities=""):
 	print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
 	op_res = False
 
@@ -204,14 +204,14 @@ def perform_operation(action, input_id="", input_name="", input_activities=""):
 		if (response[0] == 201): # success
 			op_res = True
 	elif (action == "retrieve"):
-		if (input_id != ""):
+		if (input_id != "-1"): # "-1" is what we receive if the user didn't provide the id
 			response = retrieve_id(args.my_name, input_id)
 		else:
 			response = retrieve_name(args.my_name, input_name)
 		if (response[0] == 200): #success
 			op_res = True
 	elif (action == "delete"):
-		if (input_id != ""):
+		if (input_id != "-1"): # "-1" is what we receive if the user didn't provide the id
 			response = delete_id(args.my_name, input_id)
 		else:
 			response = delete_name(args.my_name, input_name)
