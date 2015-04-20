@@ -125,14 +125,14 @@ def running_loop():
 # Returns the message to go to SQS_OUT
 def perform_operation_msg(in_msg):
 	print "Performing operation: {0} on instance {1}".format(action, args.my_name) # [debug]
-	action = in_msg.message_attributes["action"]["string_value"]
+	parse_res = parse_sqs_msg(in_msg)
+	action = parse_res[0]
+	user_id = parse_res[1]
+	user_name = parse_res[2]
+	user_activities = parse_res[3]
 	message_out = Message()
 
 	if (action == "create"):
-		user_id = in_msg.message_attributes["id"]["string_value"]
-		user_name = in_msg.message_attributes["name"]["string_value"]
-		user_activities = in_msg.message_attributes["activities"]["string_value"]
-
 		response = create(user_id, user_name, user_activities)
 		# Grab the entire json body and put in the message for SQS
 		message_out.set_body(response[1])
@@ -144,9 +144,6 @@ def perform_operation_msg(in_msg):
 			}
 		}
 	elif (action == "retrieve"):
-		user_id = in_msg.message_attributes["id"]["string_value"]
-		user_name = in_msg.message_attributes["name"]["string_value"]
-
 		if (user_id != ""):
 			response = retrieve_id(user_id)
 		else:
@@ -159,9 +156,6 @@ def perform_operation_msg(in_msg):
 			}
 		}
 	elif (action == "delete"):
-		user_id = in_msg.message_attributes["id"]["string_value"]
-		user_name = in_msg.message_attributes["name"]["string_value"]
-
 		if (user_id != ""):
 			response = delete_id(user_id)
 		else:
@@ -175,9 +169,6 @@ def perform_operation_msg(in_msg):
 			}
 		}
 	elif (action == "add_activities"):
-		user_id = in_msg.message_attributes["id"]["string_value"]
-		user_activities = in_msg.message_attributes["activities"]["string_value"]
-
 		response = add(user_id, user_activities)
 
 		message_out.set_body(response[1])
@@ -218,6 +209,30 @@ def perform_operation(action, input_id="", input_name="", input_activities=""):
 		if (response[0] == 200):
 			op_res = True
 	return op_res
+
+# Takes in a message from SQS_IN and returns a list of strings formatted like so:
+# [action, id, name, activities]
+# if one of them wasn't provided, it'll show up as ""
+def parse_sqs_msg(in_msg):
+	action = in_msg.message_attributes["action"]["string_value"]
+	user_id = ""
+	user_name = ""
+	user_activities = ""
+
+	if (action == "create"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_name = in_msg.message_attributes["name"]["string_value"]
+		user_activities = in_msg.message_attributes["activities"]["string_value"]
+	elif (action == "retrieve"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_name = in_msg.message_attributes["name"]["string_value"]
+	elif (action == "delete"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_name = in_msg.message_attributes["name"]["string_value"]
+	elif (action == "add_activities"):
+		user_id = in_msg.message_attributes["id"]["string_value"]
+		user_activities = in_msg.message_attributes["activities"]["string_value"]
+	return [action, user_id, user_name, user_activites]
 
 #TODO: If anyone has any ideas for defaults/better descriptions go for it
 def build_parser():
