@@ -55,7 +55,7 @@ def respond():
 
 	if m == None:
 	    response.status = 204 # "No content"
-	    response_body = "Queue empty\n"
+	    response_body = ""
 	    return response_body
 	else:
 	    response_code = m.message_attributes["response_code"]["string_value"]
