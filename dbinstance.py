@@ -347,6 +347,8 @@ def create_table():
 			connection=boto.dynamodb2.connect_to_region('us-west-2')
 			)
 		print "Table created!"
+		time.sleep(5) #artificial delay because tables are still being created while operations are being performed.
+		print "Done waiting!"
 	except:
 		print "already exists!"
 	finally:
