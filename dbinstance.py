@@ -362,7 +362,7 @@ def create_table():
 		time.sleep(5) #artificial delay because tables are still being created while operations are being performed.
 		print "Done waiting!"
 	except:
-		print "already exists!"
+		print "Table already exists!"
 	finally:
 		return
 
@@ -377,7 +377,6 @@ def main():
 	args = parser.parse_args()
 	if (args.proxy_list == "NONE"):
 		args.proxy_list = ""
-	print args.proxy_list
 
 	create_table()
 
