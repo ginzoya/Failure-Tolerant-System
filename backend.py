@@ -3,6 +3,7 @@
 import boto.sqs
 import argparse
 import sys
+import json
 from boto.sqs.message import Message
 from bottle import Bottle, run, route, request, response, template
 
@@ -64,7 +65,7 @@ def respond():
 	    response.status = int(response_code)
 
 	    #print response_body # [debug]
-	    return response_body
+	    return json.loads(response_body)
 
 # An example message would look like this:
 # {
